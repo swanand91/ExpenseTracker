@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import { FaEdit } from "react-icons/fa";
 function App() {
   const TOTAL_BUDGET = 50000;
 
@@ -10,6 +10,7 @@ function App() {
   });
 
   const [expenses, setExpenses] = useState([]);
+  const [editIndex, setEditIndex] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -17,18 +18,44 @@ function App() {
   };
 
   const handleSubmit = () => {
-    if (!expense.name || !expense.amount) return;
+    if (!expense.name || !expense.amount || !expense.category) return;
 
-    setExpenses([
-      ...expenses,
-      {
+    if (editIndex !== null) {
+      // Update existing expense
+      const updatedExpenses = [...expenses];
+      updatedExpenses[editIndex] = {
         name: expense.name,
         amount: Number(expense.amount),
         category: expense.category,
-      },
-    ]);
+      };
 
-    setExpense({ name: "", amount: "" ,category: ""});
+      setExpenses(updatedExpenses);
+      setEditIndex(null);
+    } else {
+      // Add new expense
+      setExpenses([
+        ...expenses,
+        {
+          name: expense.name,
+          amount: Number(expense.amount),
+          category: expense.category,
+        },
+      ]);
+    }
+
+    setExpense({ name: "", amount: "", category: "" });
+  };
+
+  const handleEdit = (index) => {
+    const itemToEdit = expenses[index];
+
+    setExpense({
+      name: itemToEdit.name,
+      amount: itemToEdit.amount,
+      category: itemToEdit.category,
+    });
+
+    setEditIndex(index);
   };
 
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
@@ -45,7 +72,7 @@ function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <h2 style={{ textAlign: "center" }}>My Expense Tracker App in React</h2>
+      <h2 style={{ textAlign: "center" }}>My Expense Tracker App</h2>
 
       <h3
         style={{
@@ -53,12 +80,12 @@ function App() {
           color: remainingBudget < 0 ? "red" : "green",
         }}
       >
-        Total Budget: ₹{remainingBudget}
+        Remaining Budget: ₹{remainingBudget}
       </h3>
 
       <hr />
 
-      {/* Input Section */}
+      {/* Expense Name */}
       <div style={{ marginBottom: "15px" }}>
         <label>Expense Name</label>
         <input
@@ -73,12 +100,31 @@ function App() {
           }}
         />
       </div>
-        <div style={{ marginBottom: "15px" }}>
+
+      {/* Amount */}
+      <div style={{ marginBottom: "15px" }}>
+        <label>Amount</label>
+        <input
+          type="number"
+          name="amount"
+          value={expense.amount}
+          onChange={handleChange}
+          style={{
+            width: "100%",
+            padding: "8px",
+            marginTop: "5px",
+          }}
+        />
+      </div>
+
+      {/* Category */}
+      <div style={{ marginBottom: "15px" }}>
         <label>Category</label>
         <select
           name="category"
           value={expense.category}
           onChange={handleChange}
+          
           style={{
             width: "100%",
             padding: "8px",
@@ -95,36 +141,20 @@ function App() {
         </select>
       </div>
 
-      <div style={{ marginBottom: "15px" }}>
-        <label>Amount</label>
-        <input
-          type="number"
-          name="amount"
-          value={expense.amount}
-          onChange={handleChange}
-          style={{
-            width: "100%",
-            padding: "8px",
-            marginTop: "5px",
-          }}
-        />
-      </div>
-
       <button
         onClick={handleSubmit}
         style={{
           width: "100%",
           padding: "10px",
-          backgroundColor: "#4CAF50",
+          backgroundColor: editIndex !== null ? "#ff9800" : "#4CAF50",
           color: "white",
           border: "none",
           borderRadius: "5px",
           cursor: "pointer",
         }}
       >
-        Add Expense
+        {editIndex !== null ? "Update Expense" : "Add Expense"}
       </button>
-
 
       <h3 style={{ marginTop: "25px" }}>Expense List</h3>
 
@@ -146,9 +176,27 @@ function App() {
             }}
           >
             <b>{item.name}</b>
-            <p>Category: {item.category}</p>
             <p style={{ margin: "5px 0" }}>₹{item.amount}</p>
-                        
+            <small>Category: {item.category}</small>
+
+            <button
+  onClick={() => handleEdit(index)}
+  style={{
+    marginTop: "8px",
+    padding: "6px",
+    backgroundColor: "#2196F3",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  }}
+>
+  <FaEdit />
+</button>
           </div>
         ))}
       </div>
