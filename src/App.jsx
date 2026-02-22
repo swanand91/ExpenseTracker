@@ -6,6 +6,7 @@ function App() {
   const [expense, setExpense] = useState({
     name: "",
     amount: "",
+    category: "",
   });
 
   const [expenses, setExpenses] = useState([]);
@@ -23,10 +24,11 @@ function App() {
       {
         name: expense.name,
         amount: Number(expense.amount),
+        category: expense.category,
       },
     ]);
 
-    setExpense({ name: "", amount: "" });
+    setExpense({ name: "", amount: "" ,category: ""});
   };
 
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
@@ -70,6 +72,27 @@ function App() {
             marginTop: "5px",
           }}
         />
+      </div>
+        <div style={{ marginBottom: "15px" }}>
+        <label>Category</label>
+        <select
+          name="category"
+          value={expense.category}
+          onChange={handleChange}
+          style={{
+            width: "100%",
+            padding: "8px",
+            marginTop: "5px",
+          }}
+        >
+          <option value="">Select Category</option>
+          <option value="Travel">Travel</option>
+          <option value="Food">Food</option>
+          <option value="Loan">Loan</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Rent">Rent</option>
+          <option value="Others">Others</option>
+        </select>
       </div>
 
       <div style={{ marginBottom: "15px" }}>
@@ -123,7 +146,9 @@ function App() {
             }}
           >
             <b>{item.name}</b>
+            <p>Category: {item.category}</p>
             <p style={{ margin: "5px 0" }}>₹{item.amount}</p>
+                        
           </div>
         ))}
       </div>
