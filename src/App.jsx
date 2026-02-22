@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
+
 function App() {
   const TOTAL_BUDGET = 50000;
 
@@ -12,27 +13,30 @@ function App() {
   const [expenses, setExpenses] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
 
+  // Handle Input Change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setExpense({ ...expense, [name]: value });
   };
 
+  // Add or Update Expense
   const handleSubmit = () => {
-    if (!expense.name || !expense.amount || !expense.category) return;
+    if (!expense.name || !expense.amount) return;
 
     if (editIndex !== null) {
-      // Update existing expense
+      // Update only name and amount (category remains same)
       const updatedExpenses = [...expenses];
       updatedExpenses[editIndex] = {
         name: expense.name,
         amount: Number(expense.amount),
-        category: expense.category,
+        category: expenses[editIndex].category,
       };
 
       setExpenses(updatedExpenses);
       setEditIndex(null);
     } else {
-      // Add new expense
+      if (!expense.category) return;
+
       setExpenses([
         ...expenses,
         {
@@ -46,16 +50,34 @@ function App() {
     setExpense({ name: "", amount: "", category: "" });
   };
 
+  // Edit Expense
   const handleEdit = (index) => {
-    const itemToEdit = expenses[index];
+    const item = expenses[index];
 
     setExpense({
-      name: itemToEdit.name,
-      amount: itemToEdit.amount,
-      category: itemToEdit.category,
+      name: item.name,
+      amount: item.amount,
+      category: item.category,
     });
 
     setEditIndex(index);
+  };
+
+  // Delete Expense
+  const handleDelete = (index) => {
+    if (!window.confirm("Are you sure you want to delete this expense?")) {
+      return;
+    }
+
+    const newExpenses = [...expenses];
+    newExpenses.splice(index, 1);
+    setExpenses(newExpenses);
+
+    // Reset edit mode if deleting same item
+    if (editIndex === index) {
+      setEditIndex(null);
+      setExpense({ name: "", amount: "", category: "" });
+    }
   };
 
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
@@ -72,7 +94,7 @@ function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <h2 style={{ textAlign: "center" }}>My Expense Tracker App</h2>
+      <h2 style={{ textAlign: "center" }}>Expense Tracker</h2>
 
       <h3
         style={{
@@ -93,42 +115,22 @@ function App() {
           name="name"
           value={expense.name}
           onChange={handleChange}
-          style={{
-            width: "100%",
-            padding: "8px",
-            marginTop: "5px",
-          }}
+          style={{ width: "100%", padding: "8px", marginTop: "5px" }}
         />
       </div>
-
-      {/* Amount */}
-      <div style={{ marginBottom: "15px" }}>
-        <label>Amount</label>
-        <input
-          type="number"
-          name="amount"
-          value={expense.amount}
-          onChange={handleChange}
-          style={{
-            width: "100%",
-            padding: "8px",
-            marginTop: "5px",
-          }}
-        />
-      </div>
-
-      {/* Category */}
+        {/* Category */}
       <div style={{ marginBottom: "15px" }}>
         <label>Category</label>
         <select
           name="category"
           value={expense.category}
           onChange={handleChange}
-          
+          disabled={editIndex !== null}
           style={{
             width: "100%",
             padding: "8px",
             marginTop: "5px",
+            backgroundColor: editIndex !== null ? "#eee" : "white",
           }}
         >
           <option value="">Select Category</option>
@@ -141,6 +143,21 @@ function App() {
         </select>
       </div>
 
+      {/* Amount */}
+      <div style={{ marginBottom: "15px" }}>
+        <label>Amount</label>
+        <input
+          type="number"
+          name="amount"
+          value={expense.amount}
+          onChange={handleChange}
+          style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+        />
+      </div>
+
+      
+
+      {/* Add / Update Button */}
       <button
         onClick={handleSubmit}
         style={{
@@ -166,39 +183,56 @@ function App() {
         }}
       >
         {expenses.map((item, index) => (
-          <div
-            key={index}
-            style={{
-              border: "1px solid #ddd",
-              padding: "10px",
-              borderRadius: "6px",
-              backgroundColor: "#f9f9f9",
-            }}
-          >
-            <b>{item.name}</b>
-            <p style={{ margin: "5px 0" }}>₹{item.amount}</p>
-            <small>Category: {item.category}</small>
+  <div
+    key={index}
+    style={{
+      border: "1px solid #ddd",
+      padding: "15px",
+      borderRadius: "8px",
+      backgroundColor: "#f9f9f9",
+    }}
+  >
+    <p><strong>Name:</strong> {item.name}</p>
+    <p><strong>Category:</strong> {item.category}</p>
+    <p><strong>Amount:</strong> ₹{item.amount}</p>
+    {/* Buttons Row */}
+    <div
+      style={{
+        display: "flex",
+        gap: "10px",
+        marginTop: "10px",
+      }}
+    >
+      <button
+        onClick={() => handleEdit(index)}
+        style={{
+          padding: "6px 12px",
+          backgroundColor: "#2196F3",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+        }}
+      >
+        <FaEdit />
+      </button>
 
-            <button
-  onClick={() => handleEdit(index)}
-  style={{
-    marginTop: "8px",
-    padding: "6px",
-    backgroundColor: "#2196F3",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  }}
->
-  <FaEdit />
-</button>
-          </div>
-        ))}
+      <button
+        onClick={() => handleDelete(index)}
+        style={{
+          padding: "6px 12px",
+          backgroundColor: "#f44336",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+        }}
+      >
+        <FaTrash />
+      </button>
+    </div>
+  </div>
+  ))}
       </div>
     </div>
   );
