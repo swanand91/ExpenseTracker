@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import {
   PieChart,
@@ -17,6 +17,8 @@ import {
 function App() {
   const TOTAL_BUDGET = 50000;
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
   const [expense, setExpense] = useState({
     name: "",
     amount: "",
@@ -26,35 +28,47 @@ function App() {
   const [expenses, setExpenses] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#aa46be", "#ff6666"];
+  const COLORS = [
+    "#0088FE",
+    "#00C49F",
+    "#FFBB28",
+    "#FF8042",
+    "#aa46be",
+    "#ff6666",
+  ];
 
-  // Handle Input Change
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setExpense({ ...expense, [name]: value });
   };
 
-  // Add or Update Expense
   const handleSubmit = () => {
     if (!expense.name || !expense.amount || !expense.category) return;
 
     if (editIndex !== null) {
-      const updatedExpenses = [...expenses];
-      updatedExpenses[editIndex] = {
+      const updated = [...expenses];
+      updated[editIndex] = {
+        ...updated[editIndex],
         name: expense.name,
         amount: Number(expense.amount),
-        category: expenses[editIndex].category,
-        date: expenses[editIndex].date,
       };
-      setExpenses(updatedExpenses);
+      setExpenses(updated);
       setEditIndex(null);
     } else {
       setExpenses([
         ...expenses,
         {
-          name: expense.name,
+          ...expense,
           amount: Number(expense.amount),
-          category: expense.category,
           date: new Date().toISOString(),
         },
       ]);
@@ -63,7 +77,6 @@ function App() {
     setExpense({ name: "", amount: "", category: "" });
   };
 
-  // Edit
   const handleEdit = (index) => {
     const item = expenses[index];
     setExpense({
@@ -74,24 +87,17 @@ function App() {
     setEditIndex(index);
   };
 
-  // Delete
   const handleDelete = (index) => {
-    if (!window.confirm("Are you sure you want to delete this expense?")) return;
+    if (!window.confirm("Delete this expense?")) return;
 
-    const newExpenses = [...expenses];
-    newExpenses.splice(index, 1);
-    setExpenses(newExpenses);
-
-    if (editIndex === index) {
-      setEditIndex(null);
-      setExpense({ name: "", amount: "", category: "" });
-    }
+    const updated = [...expenses];
+    updated.splice(index, 1);
+    setExpenses(updated);
   };
 
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
   const remainingBudget = TOTAL_BUDGET - totalSpent;
 
-  // 🔹 Category Chart Data
   const categoryData = Object.values(
     expenses.reduce((acc, item) => {
       if (!acc[item.category]) {
@@ -102,7 +108,6 @@ function App() {
     }, {})
   );
 
-  // 🔹 Monthly Chart Data
   const monthlyData = Object.values(
     expenses.reduce((acc, item) => {
       const month = new Date(item.date).toLocaleString("default", {
@@ -124,72 +129,19 @@ function App() {
   return (
     <div
       style={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: isMobile ? "10px" : "20px",
         display: "flex",
-        gap: "30px",
-        padding: "40px",
+        flexDirection: isMobile ? "column" : "row",
+        gap: isMobile ? "15px" : "30px",
         fontFamily: "Arial, sans-serif",
       }}
     >
-      {/* ================= LEFT SIDE - CHARTS ================= */}
-      <div style={{ width: "50%" }}>
-        <h2>Analytics</h2>
-
-        {!hasData ? (
-          <div
-            style={{
-              marginTop: "60px",
-              padding: "50px",
-              textAlign: "center",
-              backgroundColor: "#f5f5f5",
-              borderRadius: "10px",
-              color: "#777",
-              fontSize: "18px",
-            }}
-          >
-             No data available. <br />
-            Please add expenses to see charts.
-          </div>
-        ) : (
-          <>
-            {/* Pie Chart */}
-            <h3>Spending by Category</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={100}
-                  label
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-
-            {/* Bar Chart */}
-            <h3 style={{ marginTop: "40px" }}>Monthly Spending Trend</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="amount" fill="#4CAF50" />
-              </BarChart>
-            </ResponsiveContainer>
-          </>
-        )}
-      </div>
-
-      {/* ================= RIGHT SIDE - YOUR OLD UI ================= */}
+      {/* LEFT SIDE - FORM */}
       <div
         style={{
-          width: "50%",
+          width: isMobile ? "100%" : "50%",
           padding: "20px",
           borderRadius: "10px",
           boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
@@ -208,7 +160,6 @@ function App() {
 
         <hr />
 
-        {/* Expense Name */}
         <div style={{ marginBottom: "15px" }}>
           <label>Expense Name</label>
           <input
@@ -220,7 +171,6 @@ function App() {
           />
         </div>
 
-        {/* Category */}
         <div style={{ marginBottom: "15px" }}>
           <label>Category</label>
           <select
@@ -228,12 +178,7 @@ function App() {
             value={expense.category}
             onChange={handleChange}
             disabled={editIndex !== null}
-            style={{
-              width: "100%",
-              padding: "8px",
-              marginTop: "5px",
-              backgroundColor: editIndex !== null ? "#eee" : "white",
-            }}
+            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           >
             <option value="">Select Category</option>
             <option value="Travel">Travel</option>
@@ -245,7 +190,6 @@ function App() {
           </select>
         </div>
 
-        {/* Amount */}
         <div style={{ marginBottom: "15px" }}>
           <label>Amount</label>
           <input
@@ -257,7 +201,6 @@ function App() {
           />
         </div>
 
-        {/* Button */}
         <button
           onClick={handleSubmit}
           style={{
@@ -275,63 +218,117 @@ function App() {
 
         <h3 style={{ marginTop: "25px" }}>Expense List</h3>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-            gap: "10px",
-          }}
-        >
-          {expenses.map((item, index) => (
-            <div
-              key={index}
-              style={{
-                border: "1px solid #ddd",
-                padding: "15px",
-                borderRadius: "8px",
-                backgroundColor: "#f9f9f9",
-              }}
-            >
-              <p><strong>Name:</strong> {item.name}</p>
-              <p><strong>Category:</strong> {item.category}</p>
-              <p><strong>Amount:</strong> ₹{item.amount}</p>
-              <p>
-                <strong>Date:</strong>{" "}
-                {new Date(item.date).toLocaleDateString("en-IN")}
-              </p>
+        {expenses.map((item, index) => (
+          <div
+            key={index}
+            style={{
+              border: "1px solid #ddd",
+              padding: "15px",
+              borderRadius: "8px",
+              backgroundColor: "#f9f9f9",
+              marginBottom: "10px",
+            }}
+          >
+            <p><strong>Name:</strong> {item.name}</p>
+            <p><strong>Category:</strong> {item.category}</p>
+            <p><strong>Amount:</strong> ₹{item.amount}</p>
+            <p>
+              <strong>Date:</strong>{" "}
+              {new Date(item.date).toLocaleDateString("en-IN")}
+            </p>
 
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                <button
-                  onClick={() => handleEdit(index)}
-                  style={{
-                    padding: "6px 12px",
-                    backgroundColor: "#2196F3",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  <FaEdit />
-                </button>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={() => handleEdit(index)}
+                style={{
+                  backgroundColor: "#2196F3",
+                  color: "white",
+                  border: "none",
+                  padding: "6px 10px",
+                  borderRadius: "4px",
+                }}
+              >
+                <FaEdit />
+              </button>
 
-                <button
-                  onClick={() => handleDelete(index)}
-                  style={{
-                    padding: "6px 12px",
-                    backgroundColor: "#f44336",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  <FaTrash />
-                </button>
-              </div>
+              <button
+                onClick={() => handleDelete(index)}
+                style={{
+                  backgroundColor: "#f44336",
+                  color: "white",
+                  border: "none",
+                  padding: "6px 10px",
+                  borderRadius: "4px",
+                }}
+              >
+                <FaTrash />
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
+
+      {/* RIGHT SIDE - CHARTS */}
+      <div style={{ width: isMobile ? "100%" : "50%" }}>
+        <h2>Analytics</h2>
+
+        {!hasData ? (
+          <div
+            style={{
+              marginTop: "40px",
+              padding: "30px",
+              textAlign: "center",
+              backgroundColor: "#f5f5f5",
+              borderRadius: "10px",
+              color: "#777",
+            }}
+          >
+            📊 No data available. Add expenses to see charts.
+          </div>
+        ) : (
+          <>
+            <h3>Spending by Category</h3>
+            <ResponsiveContainer
+              width="100%"
+              height={isMobile ? 200 : 300}
+            >
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={isMobile ? 70 : 100}
+                  label
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell
+                      key={index}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+
+            <h3 style={{ marginTop: "30px" }}>
+              Monthly Spending Trend
+            </h3>
+            <ResponsiveContainer
+              width="100%"
+              height={isMobile ? 200 : 300}
+            >
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="amount" fill="#4CAF50" />
+              </BarChart>
+            </ResponsiveContainer>
+          </>
+        )}
       </div>
     </div>
   );
